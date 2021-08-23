@@ -188,7 +188,7 @@ func main() {
 	// create dedicated daily outputs folder.
 	shouldExit, outfolder := createFolder(starttime)
 	if shouldExit {
-		os.Exit(1)
+		return
 	}
 
 	// preformat each output file suffix.
@@ -218,8 +218,6 @@ func main() {
 	}
 	// block until all tasks done or exit.
 	wg.Wait()
-
-	os.Exit(0)
 }
 
 const usage = `Usage:
