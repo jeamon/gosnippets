@@ -30,7 +30,7 @@ import (
 var tasks []string
 
 // set list of commands to be executed based on platform (windows or linux).
-func init() {
+func setDefaultTasks() {
 	// command syntax for windows platform.
 	if runtime.GOOS == "windows" {
 		tasks = []string{"systeminfo", "tasklist", "netstat -n 5", "ping 8.8.8.8 -t", "ipconfig /all"}
@@ -118,9 +118,9 @@ func executeTask(i int, cmd *exec.Cmd, ctx context.Context, wg *sync.WaitGroup) 
 	case err = <-done:
 		// task execution completed [cmd.wait func] - check if for error.
 		if err != nil {
-			log.Printf("task [%02d] completed under process id [%d] with failure - errmsg : %v\n", i, cmd.Process.Pid, err)
+			log.Printf("task [%02d] execution completed under process id [%d] with failure - errmsg : %v\n", i, cmd.Process.Pid, err)
 		} else {
-			log.Printf("task [%02d] completed under process id [%d] with success\n", i, cmd.Process.Pid)
+			log.Printf("task [%02d] execution completed under process id [%d] with success\n", i, cmd.Process.Pid)
 		}
 		return
 	}
@@ -165,15 +165,45 @@ func main() {
 	starttime := time.Now()
 
 	// will be triggered to display usage instructions.
-	flag.Usage = func() { fmt.Fprintf(os.Stderr, "%s\n", usage) }
-	//taskPtr := flag.String("task", "", "full command with its arguments to be executed")
-	timeoutPtr := flag.Int("timeout", 180, "commands execution timetout value in seconds")
+	flag.Usage = func() {  
+		w := flag.CommandLine.Output()
+		fmt.Fprintf(w, "%s\n", usage)
+	}
+	
+	timeoutPtr := flag.Int("timeout", 0, "commands execution timetout value in seconds")
+	
+	// check for any valid subcommands : version or help
+	if len(os.Args) == 2 {
+		if os.Args[1] == "version" || os.Args[1] == "--version" || os.Args[1] == "-v" {
+			fmt.Fprintf(os.Stderr, "\n%s\n", version)
+			os.Exit(0)
+		} 
+
+		if os.Args[1] == "help" || os.Args[1] == "--help" || os.Args[1] == "-h" {
+			fmt.Fprintf(os.Stderr, "\n%s\n", usage)
+			os.Exit(0)
+		}
+	}
+
 	flag.Parse()
+
 	if *timeoutPtr <= 0 {
 		// reset to default 180 secs.
 		*timeoutPtr = 180
+		log.Printf("all tasks will be executed with a defaultt imeout value of %d secs\n", *timeoutPtr)
+	} else {
+		log.Printf("all tasks will be executed with a timeout value of %d secs\n", *timeoutPtr)
 	}
-	log.Printf("all tasks will be executed with a timeout value of %d secs\n", *timeoutPtr)
+	
+	// considering all others arguments provided after -timeout / --timeout flag as tasks.
+	tasksList := flag.Args()
+	if len(tasksList) == 0 {
+		log.Printf("no tasks provided for execution - default demo %q tasks will be used\n", runtime.GOOS)
+		setDefaultTasks()
+	} else {
+		tasks = tasksList
+		log.Printf("detected [%d] tasks to execute with a timeout value of %d secs\n", len(tasks), *timeoutPtr)
+	}
 
 	var wg sync.WaitGroup
 	// ctx, cancel := context.WithCancel(context.Background())
@@ -220,7 +250,33 @@ func main() {
 	wg.Wait()
 }
 
+const version = "This tool is <commands-executor> • version 1.0 By Jerome AMON"
+
 const usage = `Usage:
     
-    command-executor [-timeout <execution-deadline-in-seconds>]
+    Please in case you want to define a timeout value - it should come just after the program name
+    and before all the tasks command to be executed. Notice that these tasks should be double quoted.
+    Be aware that for demonstration purpose, if no tasks are provided - default tasks will be used.
+    
+    command-executor [-timeout <execution-deadline-in-seconds>] "task-one" "task-two" . . . "task-three"
+
+    Examples:
+
+    --- on Windows
+
+    go run contextual-command-executor.go "tasklist" "ipconfig /all" "systeminfo"
+    go run contextual-command-executor.go -timeout 120 "tasklist" "ipconfig /all" "systeminfo"
+
+    --- on Linux
+
+    go run contextual-command-executor.go "ps" "ifconfig" "cat /proc/cpuinfo" "ping 8.8.8.8"
+    go run contextual-command-executor.go -timeout 120 "ps" "ifconfig" "cat /proc/cpuinfo" "ping 8.8.8.8"
+
+    --- help or version checkings
+
+    go run contextual-command-executor.go --help
+    go run contextual-command-executor.go --version
+    go run contextual-command-executor.go -h
+    go run contextual-command-executor.go -v
+
 `
