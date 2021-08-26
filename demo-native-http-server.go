@@ -42,9 +42,6 @@ func logRequestMiddleware(next http.Handler) http.Handler {
 		// get unique id for this request.
 		requestId := generateID()
 		log.Printf("received new request  [id: %s] - logging ...", requestId)
-		/*if r.URL.Path == "/foo" {
-		  return
-		}*/
 		weblogger.Printf("[id: %s] [ip: %s] [method: %s] [url: %s] [browser: %s]", requestId, r.RemoteAddr, r.Method, r.URL.Path, r.UserAgent())
 		next.ServeHTTP(w, r)
 		log.Printf("completed new request [id: %s] - thanks ...", requestId)
