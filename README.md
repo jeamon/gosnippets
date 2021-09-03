@@ -128,3 +128,37 @@ store them into the program memory for usage. It loads the spam file content onl
 modification date attribute changed. This means we keep track of these two values. Updating the in-memory list store uses RW mutex to
 facilitates concurent reading access. There is a code snippet which demonstrates how you can use this spam loader routine into your code.
 The idea is simple. Each time a user submit a message, you need to check if the message contains one of your spam words before proceding. 
+
+```go
+
+// contact submission message format.
+type Message struct {
+	FullName string
+	Email string
+	Subject string
+	Content string
+	Errors map[string]string
+}
+
+// check if subject or content is suspicious.
+func (msg *Message) isSpamMessage() bool {
+	// acquire the lock and ensure its release.
+	addSpamMutex.RLock()
+	defer addSpamMutex.RUnlock()
+	// loop over the spam words list and stop once there is a hit
+	for _, spam := range spamWords {
+		if strings.Contains(msg.Content, spam) || strings.Contains(msg.Subject, spam) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// snipped to insert into the contact handler and send fake confirmation for spam message.
+if msg.isSpamMessage() {
+	// routine to handle goes here
+	// you can ignore user message or send fake confirmation
+}
+
+```
