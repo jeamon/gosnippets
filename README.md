@@ -119,3 +119,12 @@ Usage:
     go run contextual-command-executor.go -v
 
 ```
+
+
+* ### [dynamic-webapp-spam-loader.go](https://github.com/jeamon/useful-code-snippets-in-golang/blob/master/dynamic-webapp-spam-loader.go)
+
+This is a short routine that runs in background as goroutine every customized hours which will load a list of your defined spam words and 
+store them into the program memory for usage. It loads the spam file content only if the size of the file has changed or if the latest
+modification date attribute changed. This means we keep track of these two values. Updating the in-memory list store uses RW mutex to
+facilitates concurent reading access. There is a code snippet which demonstrates how you can use this spam loader routine into your code.
+The idea is simple. Each time a user submit a message, you need to check if the message contains one of your spam words before proceding. 
