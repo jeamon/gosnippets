@@ -354,14 +354,16 @@ func nextView(g *gocui.Gui, v *gocui.View) error {
 
 	cv := g.CurrentView()
 
-	switch cv.Name() {
-
-	case "nil":
-		// move the focus on the jobs list box.
+	if cv == nil {
 		if _, err := g.SetCurrentView("jobs"); err != nil {
 			log.Println("Failed to set focus on default (jobs) view:", err)
 			return err
 		}
+		return nil
+	}
+
+	switch cv.Name() {
+
 	case "jobs":
 		// move the focus on the actions list box.
 		if _, err := g.SetCurrentView("actions"); err != nil {
