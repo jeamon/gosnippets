@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jroimartin/gocui"
@@ -17,30 +18,71 @@ const (
 	jobswidth = 22
 )
 
-var jobsDatabase map[string]string
-var actionsDatabase map[string]string
+// global datastore.
+var dbs *databases
 
-func init() {
-	if jobsDatabase == nil {
-		jobsDatabase = make(map[string]string)
-	}
+// struct of a datastore.
+type databases struct {
+	jobs    map[string]string
+	actions map[string]string
+	lock    *sync.RWMutex
+}
 
-	if actionsDatabase == nil {
-		actionsDatabase = make(map[string]string)
+// newDatabases creates new databases.
+func newDatabases() *databases {
+	return &databases{
+		jobs:    map[string]string{},
+		actions: map[string]string{},
+		lock:    &sync.RWMutex{},
 	}
+}
+
+// addJob generates random id for the job and save to jobs store.
+func (db *databases) addJob(data string) {
+	id := fmt.Sprintf("%x", time.Now().UnixNano())
+	db.lock.Lock()
+	db.jobs[id] = strings.TrimSpace(data)
+	db.lock.Unlock()
+}
+
+// addAction generates random id for the action and save to actions store.
+func (db *databases) addAction(data string) {
+	id := fmt.Sprintf("%x", time.Now().UnixNano())
+	db.lock.Lock()
+	db.actions[id] = strings.TrimSpace(data)
+	db.lock.Unlock()
+}
+
+// getJob retrieves a given job data based on its id from jobs store.
+func (db *databases) getJob(id string) string {
+	var data string
+	db.lock.RLock()
+	data = db.jobs[id]
+	db.lock.RUnlock()
+	return data
+}
+
+// getAction retrieves a given action data based on its id from actions store.
+func (db *databases) getAction(id string) string {
+	var data string
+	db.lock.RLock()
+	data = db.actions[id]
+	db.lock.RUnlock()
+	return data
 }
 
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
-
 	f, err := os.OpenFile("logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Println("file no exists")
+		log.Println("failed to create logs file.")
 	}
 	defer f.Close()
-	log.SetFlags(log.LstdFlags)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.SetOutput(f)
+
+	dbs = newDatabases()
 
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
@@ -182,11 +224,15 @@ func keybindings(g *gocui.Gui) error {
 		return err
 	}
 
-	if err := g.SetKeybinding("jobs", gocui.KeyCtrlA, gocui.ModNone, inputView); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyCtrlN, gocui.ModNone, inputView); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("actions", gocui.KeyCtrlA, gocui.ModNone, inputView); err != nil {
+	if err := g.SetKeybinding("jobs", gocui.KeyCtrlN, gocui.ModNone, inputView); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("actions", gocui.KeyCtrlN, gocui.ModNone, inputView); err != nil {
 		return err
 	}
 
@@ -199,16 +245,21 @@ func inputView(g *gocui.Gui, cv *gocui.View) error {
 	var title string
 	var name string
 
-	// process based on current view name.
-	switch cv.Name() {
-
-	case "jobs":
+	if cv == nil {
+		// no focus view.
 		title = "New Job"
 		name = "addJob"
+	} else {
+		// process based on current view name.
+		switch cv.Name() {
+		case "jobs":
+			title = "New Job"
+			name = "addJob"
 
-	case "actions":
-		title = "New Action"
-		name = "addAction"
+		case "actions":
+			title = "New Action"
+			name = "addAction"
+		}
 	}
 
 	// construct the input box and position at the center of the screen.
@@ -234,6 +285,12 @@ func inputView(g *gocui.Gui, cv *gocui.View) error {
 			log.Println(err)
 			return err
 		}
+
+		// bind Ctrl+Q key to close the input box.
+		if err := g.SetKeybinding(name, gocui.KeyCtrlQ, gocui.ModNone, closeInputView); err != nil {
+			log.Println(err)
+			return err
+		}
 	}
 	return nil
 }
@@ -252,7 +309,7 @@ func copyInput(g *gocui.Gui, iv *gocui.View) error {
 		ov, _ = g.View("jobs")
 		if iv.Buffer() != "" {
 			// data typed, add it.
-			addJob(iv.Buffer())
+			dbs.addJob(iv.Buffer())
 		} else {
 			// no data entered, so go back.
 			inputView(g, ov)
@@ -261,7 +318,7 @@ func copyInput(g *gocui.Gui, iv *gocui.View) error {
 	case "addAction":
 		ov, _ = g.View("actions")
 		if iv.Buffer() != "" {
-			addAction(iv.Buffer())
+			dbs.addAction(iv.Buffer())
 		} else {
 			inputView(g, ov)
 			return nil
@@ -291,32 +348,21 @@ func copyInput(g *gocui.Gui, iv *gocui.View) error {
 	return err
 }
 
-// addJob generates random id for the job and save to jobs store.
-func addJob(data string) {
-	id := fmt.Sprintf("%x", time.Now().UnixNano())
-	output := strings.TrimSpace(data)
-	jobsDatabase[id] = output
-}
-
-// addAction generates randim id for the action and save to actions store.
-func addAction(data string) {
-	id := fmt.Sprintf("%x", time.Now().UnixNano())
-	output := strings.TrimSpace(data)
-	actionsDatabase[id] = output
-}
-
 func redrawJobs(g *gocui.Gui, v *gocui.View) {
 	// Clear the view of content and redraw it with a fresh data.
 	v.Clear()
 
-	// Loop through jobs to add their ids to the view.
-	for id, _ := range jobsDatabase {
+	// Loop through jobs database to add their ids to the view.
+	dbs.lock.RLock()
+	for id, _ := range dbs.jobs {
 		_, err := fmt.Fprintln(v, id)
 		if err != nil {
 			log.Println("Error writing to the jobs view:", err)
 		}
 	}
+	dbs.lock.RUnlock()
 
+	// add current focused job id with its output.
 	_, cy := v.Cursor()
 	l, _ := v.Line(cy)
 	if len(l) == 0 {
@@ -324,20 +370,24 @@ func redrawJobs(g *gocui.Gui, v *gocui.View) {
 	}
 
 	outputsView, _ := g.View("outputs")
-	fmt.Fprintln(outputsView, jobsDatabase[l])
+	topJobOutput := fmt.Sprintf("%s :: Job :: %s", l, dbs.getJob(l))
+	fmt.Fprintln(outputsView, topJobOutput)
+
 }
 
 func redrawActions(g *gocui.Gui, v *gocui.View) {
 	// Clear the view of content and redraw it with a fresh data.
 	v.Clear()
 
-	// Loop through jobs to add their ids to the view.
-	for id, _ := range actionsDatabase {
+	// Loop through actions to add their ids to the view.
+	dbs.lock.RLock()
+	for id, _ := range dbs.actions {
 		_, err := fmt.Fprintln(v, id)
 		if err != nil {
 			log.Println("Error writing to the actions view:", err)
 		}
 	}
+	dbs.lock.RUnlock()
 
 	_, cy := v.Cursor()
 	l, _ := v.Line(cy)
@@ -346,7 +396,8 @@ func redrawActions(g *gocui.Gui, v *gocui.View) {
 	}
 
 	outputsView, _ := g.View("outputs")
-	fmt.Fprintln(outputsView, actionsDatabase[l])
+	topActionOutput := fmt.Sprintf("%s :: Action :: %s", l, dbs.getAction(l))
+	fmt.Fprintln(outputsView, topActionOutput)
 }
 
 // nextView moves the focus to another view.
@@ -378,5 +429,36 @@ func nextView(g *gocui.Gui, v *gocui.View) error {
 		}
 	}
 
+	return nil
+}
+
+// closeInputView close temporary input view and abort change.
+func closeInputView(g *gocui.Gui, iv *gocui.View) error {
+	// clear the temporary input view.
+	iv.Clear()
+	// no input, so disbale cursor.
+	g.Cursor = false
+
+	// must delete keybindings before the view, or fatal error.
+	g.DeleteKeybindings(iv.Name())
+	if err := g.DeleteView(iv.Name()); err != nil {
+		log.Println("Failed to delete input view:", err)
+		return err
+	}
+
+	if err := setCurrentDefaultView(g); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// setCurrentDefaultView moves the focus on default view.
+func setCurrentDefaultView(g *gocui.Gui) error {
+	// move back the focus on the jobs list box.
+	if _, err := g.SetCurrentView("jobs"); err != nil {
+		log.Println("Failed to set focus on default view:", err)
+		return err
+	}
 	return nil
 }
