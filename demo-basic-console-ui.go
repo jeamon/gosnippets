@@ -1,5 +1,11 @@
 package main
 
+// This is a small go-based nice demonstration of building rich console-based user interface.
+
+// Version  : 1.0
+// Author   : Jerome AMON
+// Created  : 15 November 2021
+
 import (
 	"fmt"
 	"log"
@@ -95,7 +101,7 @@ func main() {
 	g.SelFgColor = gocui.ColorRed
 	g.BgColor = gocui.ColorBlack
 	g.FgColor = gocui.ColorWhite
-	//g.Cursor = true
+	g.Cursor = true
 
 	g.SetManagerFunc(layout)
 
@@ -116,9 +122,9 @@ func main() {
 	}
 	jobsView.Title = "Jobs"
 	jobsView.FgColor = gocui.ColorWhite
-	jobsView.SelBgColor = gocui.ColorBlack
-	jobsView.SelFgColor = gocui.ColorGreen
-	jobsView.Autoscroll = true
+	jobsView.SelBgColor = gocui.ColorBlue
+	jobsView.SelFgColor = gocui.ColorWhite
+	jobsView.Highlight = true
 
 	// Outputs view.
 	outputsView, err := g.SetView("outputs", jobswidth+1, 0, maxX-1, maxY-4)
@@ -142,8 +148,9 @@ func main() {
 	}
 	actionsView.Title = "Actions"
 	actionsView.FgColor = gocui.ColorYellow
-	actionsView.SelBgColor = gocui.ColorBlack
-	actionsView.SelFgColor = gocui.ColorRed
+	actionsView.SelBgColor = gocui.ColorGreen
+	actionsView.SelFgColor = gocui.ColorBlack
+	actionsView.Highlight = true
 
 	// Commands view.
 	commandsView, err := g.SetView("commands", 0, maxY-3, maxX-1, maxY-1)
@@ -213,9 +220,10 @@ func quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
 }
 
-// keybindings binds keys to views.
+// keybindings binds multiple keys to views.
 func keybindings(g *gocui.Gui) error {
 
+	// keys binding on global terminal itself.
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		return err
 	}
@@ -224,6 +232,7 @@ func keybindings(g *gocui.Gui) error {
 		return err
 	}
 
+	// Ctrl+N key binding to create new data entry.
 	if err := g.SetKeybinding("", gocui.KeyCtrlN, gocui.ModNone, inputView); err != nil {
 		return err
 	}
@@ -233,6 +242,23 @@ func keybindings(g *gocui.Gui) error {
 	}
 
 	if err := g.SetKeybinding("actions", gocui.KeyCtrlN, gocui.ModNone, inputView); err != nil {
+		return err
+	}
+
+	// arrow keys binding to navigate over the list of items.
+	if err := g.SetKeybinding("jobs", gocui.KeyArrowUp, gocui.ModNone, cursorUp); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("actions", gocui.KeyArrowUp, gocui.ModNone, cursorUp); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("jobs", gocui.KeyArrowDown, gocui.ModNone, cursorDown); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("actions", gocui.KeyArrowDown, gocui.ModNone, cursorDown); err != nil {
 		return err
 	}
 
@@ -461,4 +487,84 @@ func setCurrentDefaultView(g *gocui.Gui) error {
 		return err
 	}
 	return nil
+}
+
+// lineBelow returns true if there is a non-empty string in cursor position y+1.
+func lineBelow(g *gocui.Gui, v *gocui.View) bool {
+	_, cy := v.Cursor()
+	if l, _ := v.Line(cy + 1); l != "" {
+		return true
+	}
+	return false
+}
+
+// cursorDown moves cursor to (currentY + 1) position if there is data there.
+func cursorDown(g *gocui.Gui, v *gocui.View) error {
+
+	if v != nil && lineBelow(g, v) == true {
+		// there is data to next line.
+		v.MoveCursor(0, 1, false)
+		// get cursor Y coordinate and data there.
+		_, cy := v.Cursor()
+		id, _ := v.Line(cy)
+
+		if v.Name() == "jobs" {
+			redrawOutputs(g, "jobs", id)
+
+		} else if v.Name() == "actions" {
+			redrawOutputs(g, "actions", id)
+		}
+	}
+
+	return nil
+}
+
+// lineAbove returns true if there is a non-empty string in cursor position y-1.
+func lineAbove(g *gocui.Gui, v *gocui.View) bool {
+	_, cy := v.Cursor()
+	if l, _ := v.Line(cy - 1); l != "" {
+		return true
+	}
+	return false
+}
+
+// cursorUp moves cursor to (currentY - 1) position if there is data there.
+func cursorUp(g *gocui.Gui, v *gocui.View) error {
+	if v != nil && lineAbove(g, v) == true {
+		v.MoveCursor(0, -1, false)
+		// get cursor Y coordinate and data there.
+		_, cy := v.Cursor()
+		id, _ := v.Line(cy)
+
+		if v.Name() == "jobs" {
+			redrawOutputs(g, "jobs", id)
+
+		} else if v.Name() == "actions" {
+			redrawOutputs(g, "actions", id)
+		}
+	}
+
+	return nil
+}
+
+func redrawOutputs(g *gocui.Gui, sourceViewName, id string) {
+	// clean the outputs view and redraw it with focused id data.
+	outputsView, _ := g.View("outputs")
+	outputsView.Clear()
+
+	// retreive data from database and add it to outputs view.
+	switch sourceViewName {
+	case "jobs":
+		data := dbs.getJob(id)
+		_, err := fmt.Fprintln(outputsView, data)
+		if err != nil {
+			log.Println("Error writing job data to outputs view:", err)
+		}
+	case "actions":
+		data := dbs.getAction(id)
+		_, err := fmt.Fprintln(outputsView, data)
+		if err != nil {
+			log.Println("Error writing action data to outputs view:", err)
+		}
+	}
 }
