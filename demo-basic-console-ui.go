@@ -9,6 +9,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"runtime"
 	"strings"
@@ -80,6 +81,8 @@ func (db *databases) getAction(id string) string {
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
+	rand.Seed(time.Now().UnixNano())
+
 	f, err := os.OpenFile("logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Println("failed to create logs file.")
@@ -102,9 +105,10 @@ func main() {
 	g.SelFgColor = gocui.ColorRed
 	g.BgColor = gocui.ColorBlack
 	g.FgColor = gocui.ColorWhite
-	// enable cursor and Esc as key.
+	// enable mouse / cursor / Esc as key.
 	g.Cursor = true
 	g.InputEsc = true
+	g.Mouse = true
 
 	g.SetManagerFunc(layout)
 
@@ -138,7 +142,7 @@ func main() {
 	outputsView.Title = "Outputs"
 	outputsView.FgColor = gocui.ColorWhite
 	outputsView.SelBgColor = gocui.ColorBlack
-	outputsView.SelFgColor = gocui.ColorYellow
+	outputsView.SelFgColor = gocui.ColorRed
 	// scroll if the output exceeds the visible area.
 	outputsView.Autoscroll = true
 	outputsView.Wrap = true
@@ -262,6 +266,31 @@ func keybindings(g *gocui.Gui) error {
 	}
 
 	if err := g.SetKeybinding("actions", gocui.KeyArrowDown, gocui.ModNone, cursorDown); err != nil {
+		return err
+	}
+
+	// Mouse bindings to select an item or scroll over the list of items.
+	if err := g.SetKeybinding("jobs", gocui.MouseWheelUp, gocui.ModNone, cursorUp); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("actions", gocui.MouseWheelUp, gocui.ModNone, cursorUp); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("jobs", gocui.MouseWheelDown, gocui.ModNone, cursorDown); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("actions", gocui.MouseWheelDown, gocui.ModNone, cursorDown); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("jobs", gocui.MouseLeft, gocui.ModNone, mouseLeftClick); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("actions", gocui.MouseLeft, gocui.ModNone, mouseLeftClick); err != nil {
 		return err
 	}
 
@@ -539,6 +568,7 @@ func lineAbove(g *gocui.Gui, v *gocui.View) bool {
 // cursorUp moves cursor to (currentY - 1) position if there is data there.
 func cursorUp(g *gocui.Gui, v *gocui.View) error {
 	if v != nil && lineAbove(g, v) == true {
+		// there is data upper.
 		v.MoveCursor(0, -1, false)
 		// get cursor Y coordinate and data there.
 		_, cy := v.Cursor()
@@ -575,4 +605,40 @@ func redrawOutputs(g *gocui.Gui, sourceViewName, id string) {
 			log.Println("Error writing action data to outputs view:", err)
 		}
 	}
+}
+
+// mouseLeftClick displays the output data of the item selected.
+func mouseLeftClick(g *gocui.Gui, v *gocui.View) error {
+
+	if v != nil {
+		_, cy := v.Cursor()
+		id, _ := v.Line(cy)
+
+		if len(id) == 0 {
+			// click on empty space, fun.
+			displaySymbol(g)
+			return nil
+		}
+
+		if v.Name() == "jobs" {
+			redrawOutputs(g, "jobs", id)
+
+		} else if v.Name() == "actions" {
+			redrawOutputs(g, "actions", id)
+		}
+	}
+
+	return nil
+}
+
+// displayIcon displays symbol at random position.
+func displayIcon(g *gocui.Gui) {
+	outputsView, _ := g.View("outputs")
+	// generate two random values.
+	xLines, yLines := outputsView.Size()
+	posX, posY := rand.Intn(xLines+1), rand.Intn(yLines+1)
+	// change cursor coordinates.
+	outputsView.SetCursor(posX, posY)
+	// insert symbol at this position.
+	outputsView.EditWrite('♣')
 }
