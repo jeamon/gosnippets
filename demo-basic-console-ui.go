@@ -96,12 +96,15 @@ func main() {
 	}
 	defer g.Close()
 
-	// Highlight active view.
+	// active view to use its Sel properties.
 	g.Highlight = true
+	// view border color.
 	g.SelFgColor = gocui.ColorRed
 	g.BgColor = gocui.ColorBlack
 	g.FgColor = gocui.ColorWhite
+	// enable cursor and Esc as key.
 	g.Cursor = true
+	g.InputEsc = true
 
 	g.SetManagerFunc(layout)
 
@@ -312,8 +315,13 @@ func inputView(g *gocui.Gui, cv *gocui.View) error {
 			return err
 		}
 
-		// bind Ctrl+Q key to close the input box.
+		// bind Ctrl+Q and Escape keys to close the input box.
 		if err := g.SetKeybinding(name, gocui.KeyCtrlQ, gocui.ModNone, closeInputView); err != nil {
+			log.Println(err)
+			return err
+		}
+
+		if err := g.SetKeybinding(name, gocui.KeyEsc, gocui.ModNone, closeInputView); err != nil {
 			log.Println(err)
 			return err
 		}
