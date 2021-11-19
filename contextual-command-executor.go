@@ -165,19 +165,19 @@ func main() {
 	starttime := time.Now()
 
 	// will be triggered to display usage instructions.
-	flag.Usage = func() {  
+	flag.Usage = func() {
 		w := flag.CommandLine.Output()
 		fmt.Fprintf(w, "%s\n", usage)
 	}
-	
+
 	timeoutPtr := flag.Int("timeout", 0, "commands execution timetout value in seconds")
-	
+
 	// check for any valid subcommands : version or help
 	if len(os.Args) == 2 {
 		if os.Args[1] == "version" || os.Args[1] == "--version" || os.Args[1] == "-v" {
 			fmt.Fprintf(os.Stderr, "\n%s\n", version)
 			os.Exit(0)
-		} 
+		}
 
 		if os.Args[1] == "help" || os.Args[1] == "--help" || os.Args[1] == "-h" {
 			fmt.Fprintf(os.Stderr, "\n%s\n", usage)
@@ -194,7 +194,7 @@ func main() {
 	} else {
 		log.Printf("all tasks will be executed with a timeout value of %d secs\n", *timeoutPtr)
 	}
-	
+
 	// considering all others arguments provided after -timeout / --timeout flag as tasks.
 	tasksList := flag.Args()
 	if len(tasksList) == 0 {

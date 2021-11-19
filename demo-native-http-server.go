@@ -2,16 +2,16 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"time"
-	"crypto/rand"
-	"syscall"
 	"os/signal"
-
+	"syscall"
+	"time"
 )
+
 // to log all web requests.
 var weblogger *log.Logger
 
@@ -49,9 +49,9 @@ func logRequestMiddleware(next http.Handler) http.Handler {
 }
 
 // starts the web server.
-func startWebServer(exit <- chan struct{}) {
+func startWebServer(exit <-chan struct{}) {
 	const address = "127.0.0.1:8080"
-	
+
 	router := http.NewServeMux()
 	router.Handle("/", http.NotFoundHandler())
 	router.HandleFunc("/welcome", welcome)
