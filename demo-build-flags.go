@@ -7,7 +7,6 @@ import (
 
 var (
 	Version    string
-	Author     string = "Jerome Amon <cloudmentor.scale@gmail.com>"
 	BuildTime  string
 	GitCommit  string
 	GoVersion  string
@@ -15,7 +14,8 @@ var (
 	TargetArch string
 	WebVersion string
 	APIVersion string
-	SourceLink string = "https://github.com/jeamon/web-based-jobs-worker-service/commit/"
+	Author     string = "Jerome Amon <cloudmentor.scale@gmail.com>"
+	SourceLink string = "https://github.com/jeamon/useful-code-snippets-in-golang/commit/"
 )
 
 func main() {
@@ -32,11 +32,9 @@ func main() {
 
 // %variable:~startposition,numberofchars%
 // %variable:~num_chars_to_skip,numberofchars%
-
-// set gover=go env GOVERSION
-// set GOHOSTARCH=amd64
-// set GOHOSTOS=windows
 // set d=%DATE% && set t=%TIME:~0,-3% && set bt="%d:~0,-1% at %t:~0,-1%" && set bt=%bt:~1,-1%
+
+// find below windows-based script into <demo-build.script.windows.bat>
 /*
 @echo off
 set d=%DATE% && set t=%TIME:~0,-3% && set bt=%d:~0,-1%%t%
