@@ -8,4 +8,4 @@ go env GOARCH > tempFile && set /P targetArch=<tempFile
 
 del tempFile
 
-go build -o build-flags.exe -a -ldflags "-X 'main.BuildTime=%bt%' -X 'main.GitCommit=%gitCommit%' -X 'main.APIVersion=1.0.0' -X 'main.WebVersion=1.0.0' -X 'main.Version=1.0.0' -X 'main.TargetOS=%targetOS%' -X 'main.TargetArch=%targetArch%' -X 'main.GoVersion=%goVersion%'" build-flags.go
+go build -o demo-build-flags.exe -a -ldflags "-X 'main.BuildTime=%bt%' -X 'main.GitCommit=%gitCommit%' -X 'main.APIVersion=1.0.0' -X 'main.WebVersion=1.0.0' -X 'main.Version=1.0.0' -X 'main.TargetOS=%targetOS%' -X 'main.TargetArch=%targetArch%' -X 'main.GoVersion=%goVersion%'" demo-build-flags.go
