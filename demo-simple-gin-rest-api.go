@@ -22,6 +22,13 @@ type BooksStore struct {
 	Books []Book
 }
 
+func (store *BooksStore) SetRoutes(router *gin.Engine) *gin.Engine {
+	api := router.Group("/api/v1/books")
+	api.GET("/", store.GetAllBooks())
+	api.GET("/:id", store.GetBook())
+	return router
+}
+
 func main() {
 
 	store := &BooksStore{
@@ -33,8 +40,7 @@ func main() {
 	}
 
 	router := gin.Default()
-	router.GET("/api/v1/books/", store.GetAllBooks())
-	router.GET("/api/v1/books/:id", store.GetBook())
+	store.SetRoutes(router)
 
 	api := http.Server{
 		Handler: router,
