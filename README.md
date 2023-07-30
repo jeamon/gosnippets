@@ -82,7 +82,7 @@ simple plain welcome.
 
 ``` 
 
-* ### [contextual-command-executor.go](https://github.com/jeamon/useful-code-snippets-in-golang/blob/master/contextual-command-executor.go)
+* ### [contextual-command-executor.go](https://github.com/jeamon/useful-code-snippets-in-golang/blob/master/multiple-commands-executor/main.go)
 
 This cross-platform tool allows to execute multiple commands from shell with possibility to specify single execution timeout for all of the commands.
 Each command output will be streaming to a unique file named with command id (order number into the list) suffixed by the hour minutes and seconds of 
@@ -121,7 +121,7 @@ Usage:
 ```
 
 
-* ### [dynamic-webapp-spam-loader.go](https://github.com/jeamon/useful-code-snippets-in-golang/blob/master/dynamic-webapp-spam-loader.go)
+* ### [dynamic-webapp-spam-loader.go](https://github.com/jeamon/useful-code-snippets-in-golang/blob/master/auto-spam-words-loader/main.go)
 
 This is a short routine that runs in background as goroutine every customized hours which will load a list of your defined spam words and 
 store them into the program memory for usage. It loads the spam file content only if the size of the file has changed or if the latest

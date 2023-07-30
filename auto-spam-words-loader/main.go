@@ -21,11 +21,11 @@ func init() {
 	loadSpamWords()
 }
 
-// loadSpamWords read the content of the file "config/spam-words.txt" and add each line to the
+// loadSpamWords read the content of the file "spam-words.txt" and add each line to the
 // spam words list. It also update the spamLatestStat variable with the file attributes.
 func loadSpamWords() {
 	var spam string
-	fichier, err := os.Open("config/spam-words.txt")
+	fichier, err := os.Open("spam-words.txt")
 	if err != nil {
 		log.Println("[ Eror ] Failed to load spam words file. ErrMsg -", err)
 		os.Exit(1)
@@ -61,7 +61,7 @@ func loadSpamWords() {
 func updateSpamWords(interval int) {
 
 	for {
-		stat, err := os.Stat("config/spam-words.txt")
+		stat, err := os.Stat("spam-words.txt")
 		if err != nil {
 			log.Println("[ Eror ] Failed to get statistics of spam words file. ErrMsg -", err)
 		} else {
@@ -76,7 +76,7 @@ func updateSpamWords(interval int) {
 }
 
 // in case you want to experiment this program change this file
-// "config/spam-words.txt" content and observe the output list.
+// "spam-words.txt" content and observe the output list.
 func main() {
 
 	// every 1 hour check for any changes and updates if any.

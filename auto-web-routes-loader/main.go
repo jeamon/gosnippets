@@ -27,7 +27,7 @@ func init() {
 // load and convert the json content into map
 func loadDynamicRoutes() {
 
-	routesFile, err := os.Open("config/dynamic-routes.json")
+	routesFile, err := os.Open("dynamic-routes.json")
 	if err != nil {
 		log.Println("[ Eror ] Failed to load dynamic routes file. ErrMsg -", err)
 		os.Exit(1)
@@ -74,7 +74,7 @@ func loadDynamicRoutes() {
 // check every interval minute and update if changes
 func updateDynamicRoutes(interval int) {
 	for {
-		stat, err := os.Stat("config/dynamic-routes.json")
+		stat, err := os.Stat("dynamic-routes.json")
 		if err != nil {
 			log.Println("[ Eror ] Failed to get statistics of dynamic routes file. ErrMsg -", err)
 		} else {

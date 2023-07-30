@@ -616,7 +616,7 @@ func mouseLeftClick(g *gocui.Gui, v *gocui.View) error {
 
 		if len(id) == 0 {
 			// click on empty space, fun.
-			displaySymbol(g)
+			displayIcon(g)
 			return nil
 		}
 
