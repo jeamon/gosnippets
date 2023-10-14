@@ -1,8 +1,8 @@
-# useful-code-snippets-in-golang
+# go-snippets
 This repository  contains some real world code snippets into golang. Those come from some of my mutiple go-based projects.
 feel free to learn from them. For any help regarding this repo - contact me at https://blog.cloudmentor-scale.com/contact
 
-* ### [dual-servers-http-https-with-custom-tls.go](https://github.com/jeamon/useful-code-snippets-in-golang/blob/master/dual-servers-http-https-with-custom-tls.go)
+* ### [dual-servers-http-https-with-custom-tls.go](https://github.com/jeamon/gosnippets/blob/master/dual-servers-http-https-with-custom-tls.go)
 
 This is a simple go program that demonstrates how to spin up HTTP & HTTPS servers at the same time
 and force all HTTP traffic to be redirected to HTTPS while configurting HSTS. All done with customized 
@@ -34,7 +34,7 @@ SHA   : Secure Hash Algorithm
 
 ```
 
-* ### [demo-native-http-server.go](https://github.com/jeamon/useful-code-snippets-in-golang/blob/master/demo-native-http-server.go)
+* ### [demo-native-http-server.go](https://github.com/jeamon/gosnippets/blob/master/demo-native-http-server.go)
 
 This is another go web development program that constructs a HTTP server with a middleware in charge of generating & assigning an ID
 to each request that comes in. It shows up the useage of the built-in shutdown feature (available from 1.8+). This is achieved
@@ -82,7 +82,7 @@ simple plain welcome.
 
 ``` 
 
-* ### [contextual-command-executor.go](https://github.com/jeamon/useful-code-snippets-in-golang/blob/master/multiple-commands-executor/main.go)
+* ### [contextual-command-executor.go](https://github.com/jeamon/gosnippets/blob/master/multiple-commands-executor/main.go)
 
 This cross-platform tool allows to execute multiple commands from shell with possibility to specify single execution timeout for all of the commands.
 Each command output will be streaming to a unique file named with command id (order number into the list) suffixed by the hour minutes and seconds of 
@@ -121,7 +121,7 @@ Usage:
 ```
 
 
-* ### [dynamic-webapp-spam-loader.go](https://github.com/jeamon/useful-code-snippets-in-golang/blob/master/auto-spam-words-loader/main.go)
+* ### [dynamic-webapp-spam-loader.go](https://github.com/jeamon/gosnippets/blob/master/auto-spam-words-loader/main.go)
 
 This is a short routine that runs in background as goroutine every customized hours which will load a list of your defined spam words and 
 store them into the program memory for usage. It loads the spam file content only if the size of the file has changed or if the latest

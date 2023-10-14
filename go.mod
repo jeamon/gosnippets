@@ -1,4 +1,4 @@
-module github.com/jeamon/useful-code-snippets-in-golang
+module github.com/jeamon/gosnippets
 
 go 1.17
 
