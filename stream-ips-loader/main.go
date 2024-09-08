@@ -9,7 +9,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -17,11 +17,7 @@ import (
 
 // isValidIP takes a supposed ip address and returns true if it is valid.
 func isValidIP(ip string) bool {
-	if net.ParseIP(ip) != nil {
-		return true
-	}
-
-	return false
+	return net.ParseIP(ip) != nil
 }
 
 // loadInfos loads data piped and from all files passed
@@ -37,7 +33,7 @@ func loadInfos(ips *[]string) {
 	if (fi.Mode() & os.ModeCharDevice) == 0 {
 		// there is data is from pipe, so grab the
 		// full content and build a list of entries.
-		content, _ := ioutil.ReadAll(os.Stdin)
+		content, _ := io.ReadAll(os.Stdin)
 		entries = strings.Split(string(content), "\n")
 
 	}
@@ -50,7 +46,7 @@ func loadInfos(ips *[]string) {
 		// content and build a list of entries.
 		var lines []string
 		for _, file := range filenames {
-			content, err := ioutil.ReadFile(file)
+			content, err := os.ReadFile(file)
 			if err != nil {
 				continue
 			}
